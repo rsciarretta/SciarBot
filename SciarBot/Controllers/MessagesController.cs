@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Web.Http;
 using Microsoft.Bot.Connector;
+using Microsoft.ServiceBus.Messaging;
 
 namespace SciarBot
 {
@@ -37,7 +38,16 @@ namespace SciarBot
                 if (reply.Text != "")
                     return reply;
                 else
+                {
+                    var connectionString = "Endpoint=sb://chatbot.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=FmoM2di+b7oFix1xzWA7tWgIZQuowplGjm3W47cNbuk=";
+                    var queueName = "messages";
+
+                    var client = QueueClient.CreateFromConnectionString(connectionString, queueName);
+                    var msg = new BrokeredMessage($"{message.Text}");
+                    client.Send(msg);
+
                     return null;
+                }
             }
             else
             {
