@@ -17,9 +17,6 @@ namespace SciarBot
             {
                 Message reply = message.CreateReplyMessage();
 
-                //Tracker tracker = new Tracker("UA-80613133-1", "sciarbot.azurewebsites.net");
-                //tracker.TrackPageView(HttpContext, "My API - Create", "api/create");
-
                 if (message.Text.ToLower() == "ping")
                     reply.Text = $"Pong";
 
