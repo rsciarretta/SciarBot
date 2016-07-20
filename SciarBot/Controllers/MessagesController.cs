@@ -7,9 +7,8 @@ using System.Web.Http;
 using System.Web.Http.Description;
 using Microsoft.Bot.Connector;
 using Newtonsoft.Json;
-using Microsoft.ServiceBus.Messaging;
 
-namespace ChatBot
+namespace SciarBot
 {
     [BotAuthentication]
     public class MessagesController : ApiController
@@ -20,13 +19,25 @@ namespace ChatBot
         /// </summary>
         public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
         {
-            ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
             if (activity.Type == ActivityTypes.Message)
             {
-                // calculate something for us to return
-                int length = (activity.Text ?? string.Empty).Length;
+                ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
+                Activity reply = activity.CreateReply();
+
+                if (activity.Text.ToLower() == "ping")
+                    reply.Text = $"Pong";
+
+                if (activity.Text.ToLower().StartsWith("ciao"))
+                    reply.Text = $"Ciao **{activity.From.Name}**!!!";
+
+                if (activity.Text.ToLower() == "debug")
+                {
+                    reply.Text += $"Id: {activity.From.Id}\n";
+                    reply.Text += $"Name: {activity.From.Name}\n";
+                    reply.Text += $"Coversation Id: {activity.Conversation.Id}\n";
+                }
+
                 // return our reply to the user
-                Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
                 await connector.Conversations.ReplyToActivityAsync(reply);
             }
             else
