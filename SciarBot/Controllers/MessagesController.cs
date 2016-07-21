@@ -1,12 +1,10 @@
-﻿using System;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
-using System.Web.Http.Description;
 using Microsoft.Bot.Connector;
-using Newtonsoft.Json;
+using Microsoft.Bot.Builder.Dialogs;
+using System;
 
 namespace SciarBot
 {
@@ -17,17 +15,14 @@ namespace SciarBot
         /// POST: api/Messages
         /// Receive a message from a user and reply to it
         /// </summary>
-        public async Task<HttpResponseMessage> Post([FromBody]Activity activity)
+        public virtual async Task<HttpResponseMessage> Post([FromBody]Activity activity)
         {
             if (activity.Type == ActivityTypes.Message)
             {
-                ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
-                // calculate something for us to return
-                int length = (activity.Text ?? string.Empty).Length;
-
-                // return our reply to the user
-                Activity reply = activity.CreateReply($"You sent {activity.Text} which was {length} characters");
-                await connector.Conversations.ReplyToActivityAsync(reply);
+                //ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
+                //Activity reply = activity.CreateReply($"messaggio arrivato");
+                //connector.Conversations.ReplyToActivity(reply);
+                await Conversation.SendAsync(activity, () => new Dialogs.TravelGuidDialog());
             }
             else
             {
@@ -65,5 +60,7 @@ namespace SciarBot
 
             return null;
         }
+
+        
     }
 }
