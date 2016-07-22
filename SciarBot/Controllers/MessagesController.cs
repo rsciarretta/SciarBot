@@ -19,10 +19,7 @@ namespace SciarBot
         {
             if (activity.Type == ActivityTypes.Message)
             {
-                //ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
-                //Activity reply = activity.CreateReply($"messaggio arrivato");
-                //connector.Conversations.ReplyToActivity(reply);
-                await Conversation.SendAsync(activity, () => new Dialogs.TravelGuidDialog());
+                await Conversation.SendAsync(activity, () => new Dialogs.EmotionalDialog());
             }
             else
             {

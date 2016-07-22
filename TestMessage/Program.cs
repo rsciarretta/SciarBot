@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
+using System.Net.Http.Headers;
+using System.Net.Http;
+using System.Web;
 
 namespace TestMessage
 {
