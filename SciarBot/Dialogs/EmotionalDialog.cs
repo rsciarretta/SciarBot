@@ -5,6 +5,7 @@ using Microsoft.Bot.Builder.Luis;
 using Microsoft.Bot.Builder.Luis.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Bot.Connector;
 
 namespace SciarBot.Dialogs
 {
@@ -12,7 +13,61 @@ namespace SciarBot.Dialogs
     [Serializable]
     public class EmotionalDialog : LuisDialog<object>
     {
-       // public const string Entity_location = "Location";
+        // public const string Entity_location = "Location";
+        private Activity activity;
+
+        protected string GetIPAddress()
+        {
+            System.Web.HttpContext context = System.Web.HttpContext.Current;
+            string ipAddress = context.Request.ServerVariables["HTTP_X_FORWARDED_FOR"];
+
+            if (!string.IsNullOrEmpty(ipAddress))
+            {
+                string[] addresses = ipAddress.Split(',');
+                if (addresses.Length != 0)
+                {
+                    return addresses[0];
+                }
+            }
+
+            return context.Request.ServerVariables["REMOTE_ADDR"];
+        }
+
+        public static string ConvertToIPRange(string ipAddress)
+        {
+            try
+            {
+                string[] ipArray = ipAddress.Split(':')[0].Split('.');
+                int number = ipArray.Length;
+                double ipRange = 0;
+                if (number != 4)
+                {
+                    return "error ipAddress";
+                }
+                for (int i = 0; i < 4; i++)
+                {
+                    int numPosition = int.Parse(ipArray[3 - i].ToString());
+                    if (i == 4)
+                    {
+                        ipRange += numPosition;
+                    }
+                    else
+                    {
+                        ipRange += ((numPosition % 256) * (Math.Pow(256, (i))));
+                    }
+                }
+                return ipRange.ToString();
+            }
+            catch (Exception)
+            {
+                return "error";
+            }
+        }
+
+        public EmotionalDialog(Activity activity)
+        {
+            this.activity = activity;
+        }
 
         [LuisIntent("")]
         public async Task None(IDialogContext context, LuisResult result)
@@ -22,17 +77,63 @@ namespace SciarBot.Dialogs
             context.Wait(MessageReceived);
         }
 
+        [LuisIntent("debug")]
+        public async Task Debug(IDialogContext context, LuisResult result)
+        {
+            Activity replyToConversation = activity.CreateReply("Should go to conversation, with a hero card");
+            replyToConversation.Recipient = activity.From;
+            replyToConversation.Type = "message";
+            replyToConversation.Attachments = new List<Attachment>();
+            List<CardAction> cardButtons = new List<CardAction>();
+            CardAction plButton1 = new CardAction()
+            {
+                Value = "https://dev.botframework.com/bots?id=SciarBotn",
+                Type = "openUrl",
+                Title = "SciarBot Official Page"
+            };
+            cardButtons.Add(plButton1);
+            CardAction plButton2 = new CardAction()
+            {
+                Value = "tel:+41791975914",
+                Type = "call",
+                Title = "Contact Roberto"
+            };
+            cardButtons.Add(plButton2);
+
+            string reply = "";
+            reply += $"* Id: {activity.From.Id}, ";
+            reply += $"* Name: {activity.From.Name}, ";
+            reply += $"* Coversation Id: {activity.Conversation.Id}, ";
+            reply += $"* timestamp: {activity.Timestamp.ToString()}, ";
+            reply += $"* now: {DateTime.Now.ToString()}, ";
+            reply += $"* IP: {GetIPAddress()}, ";
+            reply += $"* IP Range: {ConvertToIPRange(GetIPAddress())} ";
+
+            HeroCard plCard = new HeroCard()
+            {
+                Title = "Conversation info",
+                Subtitle = "",
+                Text = reply,
+                Buttons = cardButtons
+            };
+            Attachment plAttachment = plCard.ToAttachment();
+            replyToConversation.Attachments.Add(plAttachment);
+             
+            await context.PostAsync(replyToConversation);
+            context.Wait(MessageReceived);
+        }
+
         [LuisIntent("greet")]
         public async Task Greet_Start(IDialogContext context, LuisResult result)
         {
-            await context.PostAsync($"Ciao caro!!!");
+            await context.PostAsync($"Heilaaaaaa!!!");
             context.Wait(MessageReceived);
         }
 
         [LuisIntent("greet.start")]
         public async Task Greet(IDialogContext context, LuisResult result)
         {
-            await context.PostAsync($"Hey ciao!!! Come posso aiutarti?");
+            await context.PostAsync($"Hey ciao {activity.From.Name}!!! Come posso aiutarti?");
             context.Wait(MessageReceived);
         }
 
@@ -102,7 +203,7 @@ namespace SciarBot.Dialogs
         [LuisIntent("askinfo.aboutuser.whatname")]
         public async Task AskInfo_AboutUser_WhatName(IDialogContext context, LuisResult result)
         {
-            await context.PostAsync($"Tu sei Leggenda! ...ora trovo il modo per capire il tuo nome.");
+            await context.PostAsync($"{activity.From.Name}, ma per me tu sei Leggenda! ...ora però prova a farmi una domanda più furba.");
             context.Wait(MessageReceived);
         }
 
@@ -124,6 +225,21 @@ namespace SciarBot.Dialogs
         public async Task Request_Me_GoodBoy(IDialogContext context, LuisResult result)
         {
             await context.PostAsync($"Io sono un santo :)");
+            context.Wait(MessageReceived);
+        }
+
+        [LuisIntent("askinfo.wheater")]
+        public async Task AskInfo_Wheater(IDialogContext context, LuisResult result)
+        {
+            await context.PostAsync($"Mi chiamo Sciarbot e non Bernacca...");
+            context.Wait(MessageReceived);
+        }
+
+        [LuisIntent("askinfo.wheater.city")]
+        public async Task AskInfo_Wheater_City(IDialogContext context, LuisResult result)
+        {
+            var city = result.Entities[0].ToString();
+            await context.PostAsync($"Vuoi veramente intavolare una conversazione basata sul meteo a {city}?? Poi con la solita menata che in famiglia non si parla più?");
             context.Wait(MessageReceived);
         }
     }   
