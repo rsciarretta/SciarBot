@@ -19,8 +19,7 @@ namespace SciarBot
         {
             if (activity.Type == ActivityTypes.Message)
             {
-
-                await Conversation.SendAsync(activity, () => new Dialogs.EmotionalDialog(activity));
+                await Conversation.SendAsync(activity, () => new Dialogs.ForwarderDialog());
             }
             else
             {
@@ -59,6 +58,6 @@ namespace SciarBot
             return null;
         }
 
-       
+
     }
 }

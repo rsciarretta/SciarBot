@@ -9,12 +9,24 @@ using Microsoft.Bot.Connector;
 
 namespace SciarBot.Dialogs
 {
-    [LuisModel("dd731aec-e570-48cd-99a0-1d27f01f8766", "d82b0af2e59f4f49a63ad52b282aaf60")]
+    public class UserData
+    {
+        public string name { get; set; }
+        public string years { get; set; }
+        public string email { get; set; }
+        public string activationCode { get; set; }
+        public bool isActivated { get; set; }
+    }
+
+    //[LuisModel("8396c6a6-98c1-4a3f-94b2-d4c396b22285", "c09be2aa448449dd8be94c4363aeb84f")]
+    //[LuisModel("dd731aec-e570-48cd-99a0-1d27f01f8766", "d82b0af2e59f4f49a63ad52b282aaf60")]
+    //[LuisModel("b43b0534-7e70-47a7-9554-7df562e41a4e", "c09be2aa448449dd8be94c4363aeb84f")]
     [Serializable]
     public class EmotionalDialog : LuisDialog<object>
     {
         // public const string Entity_location = "Location";
         private Activity activity;
+        private static UserData user;
 
         protected string GetIPAddress()
         {
@@ -64,7 +76,11 @@ namespace SciarBot.Dialogs
             }
         }
 
-        public EmotionalDialog(Activity activity)
+        public EmotionalDialog(Activity activity) : base(new LuisService[] {
+            new LuisService(new LuisModelAttribute("b43b0534-7e70-47a7-9554-7df562e41a4e", "c09be2aa448449dd8be94c4363aeb84f")),
+            new LuisService(new LuisModelAttribute("dd731aec-e570-48cd-99a0-1d27f01f8766", "d82b0af2e59f4f49a63ad52b282aaf60")),
+            new LuisService(new LuisModelAttribute("8396c6a6-98c1-4a3f-94b2-d4c396b22285", "c09be2aa448449dd8be94c4363aeb84f"))
+        })
         {
             this.activity = activity;
         }
@@ -72,7 +88,15 @@ namespace SciarBot.Dialogs
         [LuisIntent("")]
         public async Task None(IDialogContext context, LuisResult result)
         {
-            string message = $"Sorry I did not understand: " + string.Join(", ", result.Intents.Select(i => i.Intent));
+            string name = user == null ? string.Empty : user.name;
+            if (user != null && activity.Text.Equals(user.activationCode))
+            {
+                user.isActivated = true;
+                await context.PostAsync($"Grazie mille per esserti attivato");
+                context.Wait(MessageReceived);
+                return;
+            }
+            string message = $"Sorry {name}. I did not understand: " + string.Join(", ", result.Intents.Select(i => i.Intent));
             await context.PostAsync(message);
             context.Wait(MessageReceived);
         }
@@ -118,7 +142,7 @@ namespace SciarBot.Dialogs
             };
             Attachment plAttachment = plCard.ToAttachment();
             replyToConversation.Attachments.Add(plAttachment);
-             
+
             await context.PostAsync(replyToConversation);
             context.Wait(MessageReceived);
         }
@@ -126,7 +150,15 @@ namespace SciarBot.Dialogs
         [LuisIntent("greet")]
         public async Task Greet_Start(IDialogContext context, LuisResult result)
         {
-            await context.PostAsync($"Heilaaaaaa!!!");
+            if (user == null)
+            {
+                await context.PostAsync($"Heilaaaaaa!!!\r\n");
+                await context.PostAsync($"Ho un vuoto di memoria e non mi ricordo chi sei. Potresti dirmi come ti chiami?");
+            }
+            else
+            {
+                await context.PostAsync($"Ciao {user.name}");
+            }
             context.Wait(MessageReceived);
         }
 
@@ -242,5 +274,91 @@ namespace SciarBot.Dialogs
             await context.PostAsync($"Vuoi veramente intavolare una conversazione basata sul meteo a {city}?? Poi con la solita menata che in famiglia non si parla più?");
             context.Wait(MessageReceived);
         }
-    }   
+
+        [LuisIntent("askinfo.operations")]
+        public async Task AskInfo_Operations(IDialogContext context, LuisResult result)
+        {
+            if (user == null)
+            {
+                await context.PostAsync($"Non riesco a riconoscerti. Potresti provare ad accedere con la tua chiave di attivazione oppure iniziando a dirmi come ti chiami.");
+                context.Wait(MessageReceived);
+                return;
+            }
+            else if (user.isActivated)
+            {
+                await context.PostAsync($"Da utente attivato potrai.......");
+                context.Wait(MessageReceived);
+            }
+            else
+            {
+                await context.PostAsync($"Il tuo utente non è attivo");
+                await sendActivationCode(context);
+            }
+            return;
+        }
+
+        [LuisIntent("setinfo.user.name")]
+        //[LuisIntent("setinfo.user.years")]
+        [LuisIntent("setinfo.user.email")]
+        public async Task SetInfos(IDialogContext context, LuisResult result)
+        {
+            if (user == null)
+            {
+                user = new UserData();
+            }
+            EntityRecommendation _name = new EntityRecommendation();
+            if (result.TryFindEntity("Name", out _name))
+            {
+                user.name = _name.Entity;
+                if (string.IsNullOrEmpty(user.email))
+                {
+                    await context.PostAsync($"Ciao {user.name}. Potresti darmi un indirizzo email da poter associare al tuo utente?");
+                    context.Wait(MessageReceived);
+                    return;
+                }
+            }
+            EntityRecommendation _years = new EntityRecommendation();
+            if (result.TryFindEntity("Year", out _years))
+            {
+                user.years = _years.Entity;
+            }
+            EntityRecommendation _email = new EntityRecommendation();
+            if (result.TryFindEntity("Email", out _email))
+            {
+                bool emailWasEmpty = string.IsNullOrEmpty(user.email);
+                user.email = _email.Entity;
+                if (emailWasEmpty)
+                {
+                    await sendActivationCode(context);
+                    return;
+                }
+            }
+            string _y = _years != null ? _years.Entity : string.Empty;
+            string _n = _name != null ? _name.Entity : string.Empty;
+            string _e = _email != null ? _email.Entity : string.Empty;
+            await context.PostAsync($"ok ricevuto {_n} {_y} {_e}");
+            context.Wait(MessageReceived);
+        }
+
+        private async Task sendActivationCode(IDialogContext context)
+        {
+            if (user == null)
+            {
+                await context.PostAsync($"Non riesco a riconoscerti. Potresti dirmi come ti chiami?");
+                context.Wait(MessageReceived);
+                return;
+            }
+            user.activationCode = Guid.NewGuid().ToString();
+            user.isActivated = false;
+            await context.PostAsync($"Sto inviando un codice di attivazione all'indirizzo da te segnalato. Una volta ricevuto, scrivimelo in chat così che possa attivarti. Grazie");
+            context.Wait(MessageReceived);
+        }
+
+        [LuisIntent("request.activationcode.resend")]
+        public async Task SetInfo_ActivationCode_Resend(IDialogContext context, LuisResult result)
+        {
+            await sendActivationCode(context);
+        }
+    }
+
 }
