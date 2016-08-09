@@ -48,7 +48,7 @@ namespace SciarBot.Dialogs
                 }
                 if (ForwarderDialog.user.getData())
                 {
-                    await context.PostAsync($"Hey ciao {ForwarderDialog.user.name}. Quasi mi dimenticavo di te :)");
+                    await context.PostAsync($"Hey ciao {ForwarderDialog.user.name}. Quasi mi dimenticavo di te :) Cosa posso fare per te?");
                     context.Wait(MessageReceived);
                     return;
                 }

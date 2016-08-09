@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SciarBot.Dialogs
@@ -56,9 +57,9 @@ namespace SciarBot.Dialogs
                     var reply = context.MakeMessage();
                     ThumbnailCard plCard = new ThumbnailCard()
                     {
-                        Title = $"{info.weather[0].description}",
-                        Text = $"Temperatura: {info.main.temp}°C (min {info.main.temp_min} / max {info.main.temp_max}",
-                        Subtitle = $"nuvole {info.clouds.all}%",
+                        Title = _city.Entity,
+                        Text = $"Temp: {info.main.temp}°C\r\n(min {info.main.temp_min} / max {info.main.temp_max}",
+                        Subtitle = $"{info.weather[0].description}\r\nnuvole {info.clouds.all}%",
                         Images = new List<CardImage>() { new CardImage(url: $"http://openweathermap.org/img/w/{info.weather[0].icon}.png") }
                     };
                     reply.Attachments = new List<Attachment>();
@@ -68,8 +69,15 @@ namespace SciarBot.Dialogs
                 }
                 return;
             }
+            EntityRecommendation _unspecified_location = new EntityRecommendation();
+            if (result.TryFindEntity("Unspecified_Location", out _unspecified_location))
+            {
+                await context.PostAsync("Puoi specificare meglio la tua richiesta?");
+                context.Wait(MessageReceived);
+                return;
 
-            await context.PostAsync("askinfo.weather");
+            }
+            await context.PostAsync("Non ho capito la tua domanda. Potresti ripeterla?");
             context.Wait(MessageReceived);
         }
 
@@ -83,7 +91,7 @@ namespace SciarBot.Dialogs
                 context.Wait(MessageReceived);
                 return;
             }
-            await context.PostAsync("askinfo.person");
+            await context.PostAsync("No, mi spiace :(");
             context.Wait(MessageReceived);
         }
 
@@ -98,10 +106,19 @@ namespace SciarBot.Dialogs
         [LuisIntent("")]
         public async Task None(IDialogContext context, LuisResult result)
         {
+            if (result.Intents[0].Intent.Equals("None"))
+            {
+                await context.Forward(new ForwarderDialog(), ResumeReceived, new Activity { Text = result.Query }, CancellationToken.None);
+                return;
+            }
             string message = $"Sorry. I did not understand: " + string.Join(", ", result.Intents.Select(i => i.Intent));
             await context.PostAsync(message);
             context.Wait(MessageReceived);
         }
 
+        public async Task ResumeReceived(IDialogContext context, IAwaitable<object> result)
+        {
+            //object o = result.GetAwaiter();
+        }
     }
 }
