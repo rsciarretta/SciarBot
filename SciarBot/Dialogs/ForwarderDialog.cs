@@ -2,7 +2,11 @@
 using Microsoft.Bot.Builder.Luis;
 using Microsoft.Bot.Builder.Luis.Models;
 using Microsoft.Bot.Connector;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +22,51 @@ namespace SciarBot.Dialogs
             public string name { get; set; }
             public string email { get; set; }
             public string age { get; set; }
+            public string activationCode { get; set; }
+            public bool isActivated { get; set; }
+
+            private IMongoDatabase _db = null;
+            private void connect()
+            {
+                if (_db == null)
+                {
+                    var _client = new MongoClient(ConfigurationManager.AppSettings["Mongo:ConnectionString"]);
+                    _db = _client.GetDatabase("bots");
+                }
+            }
+
+            public void saveData()
+            {
+                connect();
+                var _collection = _db.GetCollection<BsonDocument>("Users");
+                var _filter = Builders<BsonDocument>.Filter;
+                _collection.UpdateOneAsync(_filter.Eq("email", email), getUpdateDefinition(), new UpdateOptions { IsUpsert = true });
+            }
+
+
+            public bool getData()
+            {
+                connect();
+                var _collection = _db.GetCollection<BsonDocument>("Users");
+                var _filter = Builders<BsonDocument>.Filter;
+                BsonDocument doc = _collection.Find(_filter.Eq("email", email)).FirstOrDefault();
+                if (doc == null)
+                {
+                    return false;
+                }
+                name = doc.GetElement("name").Value.ToString();
+                email = doc.GetElement("email").Value.ToString();
+                age = doc.GetElement("age").Value.ToString();
+                activationCode = doc.GetElement("activationcode").Value.ToString();
+                isActivated = Convert.ToBoolean(doc.GetElement("isactivated").Value.ToString());
+                return true;
+            }
+
+            private UpdateDefinition<BsonDocument> getUpdateDefinition()
+            {
+                var _update = Builders<BsonDocument>.Update;
+                return _update.Set("name", name).Set("email", email).Set("age", age).Set("activationcode", activationCode).Set("isactivated", isActivated);
+            }
         }
 
         public static UserData user = null;
@@ -46,6 +95,16 @@ namespace SciarBot.Dialogs
             {
                 message += "Ho un vuoto di memoria. Potresti ricordarmi come ti chiami?";
             }
+            else
+            {
+                if (!string.IsNullOrEmpty(user.email))
+                {
+                    if (!string.IsNullOrEmpty(user.activationCode) && !user.isActivated)
+                    {
+                        message += "Il tuo account non è attivo.";
+                    }
+                }
+            }
             await context.PostAsync(message);
             context.Wait(MessageReceived);
         }
@@ -60,7 +119,7 @@ namespace SciarBot.Dialogs
 
         public async Task ResumeReceived(IDialogContext context, IAwaitable<object> result)
         {
-            object o = result.GetAwaiter();
+            //object o = result.GetAwaiter();
         }
     }
 }

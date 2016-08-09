@@ -42,6 +42,7 @@ namespace SciarBot.Dialogs
     [Serializable]
     public class AskInfoDialog : LuisDialog<object>
     {
+
         [LuisIntent("askinfo.weather")]
         public async Task AskInfo_Weather(IDialogContext context, LuisResult result)
         {
@@ -89,7 +90,7 @@ namespace SciarBot.Dialogs
         [LuisIntent("askinfo.aboutme")]
         public async Task AskInfo_AboutMe(IDialogContext context, LuisResult result)
         {
-            string message = $"Io sono la versione avanzata dello SciarBot!";
+            string message = $"Io sono la versione più amorevole dello SciarBot!";
             await context.PostAsync(message);
             context.Wait(MessageReceived);
         }
