@@ -111,6 +111,13 @@ namespace SciarBot.Dialogs
             await context.Forward(new SetInfoDialog(), ResumeReceived, new Activity { Text = result.Query }, CancellationToken.None);
         }
 
+        [LuisIntent("offend")]
+        public async Task Offend(IDialogContext context, LuisResult result)
+        {
+            await context.PostAsync("Non è carino quello che mi dici :(");
+            context.Wait(MessageReceived);
+        }
+
         [LuisIntent("greet")]
         public async Task Greet(IDialogContext context, LuisResult result)
         {
