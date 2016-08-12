@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,6 +18,8 @@ namespace SciarBot.Dialogs
     [Serializable]
     public class ForwarderDialog : LuisDialog<object>
     {
+        private const string wcmApiEndpointPattern = "http://if-demo-distribution.azurewebsites.net/v1/content/it-IT/bot_answers?tags.slug={0}";
+
         public class UserData
         {
             public string name { get; set; }
@@ -69,6 +72,27 @@ namespace SciarBot.Dialogs
             }
         }
 
+
+        public class BotAnswer
+        {
+            public List<AnswerItem> items;
+        }
+
+        public class AnswerItem
+        {
+            public string title;
+            public AnswerFields fields;
+        }
+
+        public class AnswerFields
+        {
+            public string Answer;
+            public string Link;
+            public bool IsQuestion;
+        }
+
+
+        public static string LastIntent;
         public static UserData user = null;
 
         public ForwarderDialog()
@@ -120,6 +144,48 @@ namespace SciarBot.Dialogs
         public async Task ResumeReceived(IDialogContext context, IAwaitable<object> result)
         {
             //object o = result.GetAwaiter();
+        }
+
+        public static async Task<BotAnswer> GetWcmBotAnswerByTag(string tag)
+        {
+            using (HttpClient http = new HttpClient())
+            {
+                var wcmApi = await http.GetAsync(string.Format(wcmApiEndpointPattern, tag));
+                BotAnswer answer = Newtonsoft.Json.JsonConvert.DeserializeObject<BotAnswer>(wcmApi.Content.ReadAsStringAsync().Result);
+                return answer;
+            }
+        }
+
+        public static async Task<string> GetMessage(LuisResult result, string entityName)
+        {
+            var intent = result.Intents[0];
+            var query = (LastIntent != null ? LastIntent : intent.Intent).Replace('.', '-');
+            string defaultTag = string.Concat(query, "-default");
+            BotAnswer answer;
+            EntityRecommendation _entity = new EntityRecommendation();
+            if (result.TryFindEntity(entityName, out _entity))
+            {
+                string tag = string.Concat(query, "-", _entity.Entity.Replace(' ', '-').ToLower());
+
+                answer = await GetWcmBotAnswerByTag(tag);
+                if (answer.items.Count.Equals(0))
+                {
+                    answer = await GetWcmBotAnswerByTag(defaultTag);
+                }
+                var item = answer.items.First();
+                if (item.fields.IsQuestion)
+                {
+                    LastIntent = intent.Intent;
+                }
+                string message = item.fields.Answer;
+                if (!string.IsNullOrEmpty(item.fields.Link))
+                {
+                    message = string.Concat(message, "\r\n", item.fields.Link);
+                }
+                return message;
+            }
+            answer = await GetWcmBotAnswerByTag(defaultTag);
+            return answer.items.First().fields.Answer;
         }
     }
 }

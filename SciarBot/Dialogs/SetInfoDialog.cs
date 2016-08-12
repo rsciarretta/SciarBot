@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using Microsoft.Bot.Connector;
+using System.Threading;
 
 namespace SciarBot.Dialogs
 {
@@ -77,6 +78,24 @@ namespace SciarBot.Dialogs
             context.Wait(MessageReceived);
         }
 
+        [LuisIntent("setinfo.company.name")]
+        public async Task SetInfo_Company(IDialogContext context, LuisResult result)
+        {
+            string _lastIntent = ForwarderDialog.LastIntent;
+            if (!string.IsNullOrEmpty(_lastIntent))
+            {
+                await context.PostAsync(await ForwarderDialog.GetMessage(result, "Company"));
+                context.Wait(MessageReceived);
+                if (ForwarderDialog.LastIntent.Equals(_lastIntent))
+                {
+                    ForwarderDialog.LastIntent = null;
+                }
+                return;
+            }
+            await context.PostAsync("Non mi è ben chiaro il tuo messaggio. Potresti essere più specifico?");
+            context.Wait(MessageReceived);
+        }
+
         private async Task sendActivationCode(IDialogContext context)
         {
             if (ForwarderDialog.user == null)
@@ -103,6 +122,10 @@ namespace SciarBot.Dialogs
             Content content = new Content("text/plain", $"Ciao {ForwarderDialog.user.name}\r\n Il tuo codice di attivazione è:\r\n {activationCode}");
             Mail mail = new Mail(from, subject, to, content);
             dynamic response = await sg.client.mail.send.post(requestBody: mail.Get());
+        }
+
+        public async Task ResumeReceived(IDialogContext context, IAwaitable<object> result)
+        {
         }
     }
 }
