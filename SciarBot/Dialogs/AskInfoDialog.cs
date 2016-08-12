@@ -21,27 +21,6 @@ namespace SciarBot.Dialogs
         {
             await context.PostAsync(await ForwarderDialog.GetMessage(result, "City"));
             context.Wait(MessageReceived);
-            //var intent = result.Intents[0];
-            //var query = intent.Intent.Replace('.', '-');
-            //string defaultTag = string.Concat(query, "-default");
-            //ForwarderDialog.BotAnswer answer;
-            //EntityRecommendation _city = new EntityRecommendation();
-            //if (result.TryFindEntity("City", out _city))
-            //{
-            //    string tag = string.Concat(query, "-", _city.Entity.Replace(' ', '-').ToLower());
-
-            //    answer = await ForwarderDialog.GetWcmBotAnswerByTag(tag);
-            //    if (answer.items.Count.Equals(0))
-            //    {
-            //        answer = await ForwarderDialog.GetWcmBotAnswerByTag(defaultTag);
-            //    }
-            //    await context.PostAsync(answer.items.First().fields.Answer);
-            //    context.Wait(MessageReceived);
-            //    return;
-            //}
-            //answer = await ForwarderDialog.GetWcmBotAnswerByTag(defaultTag);
-            //await context.PostAsync(answer.items.First().fields.Answer);
-            //context.Wait(MessageReceived);
         }
 
         [LuisIntent("askinfo.person")]
@@ -49,30 +28,6 @@ namespace SciarBot.Dialogs
         {
             await context.PostAsync(await ForwarderDialog.GetMessage(result, "Person"));
             context.Wait(MessageReceived);
-            //var intent = result.Intents[0];
-            //var query = intent.Intent.Replace('.', '-');
-            //string defaultTag = string.Concat(query, "-default");
-            //ForwarderDialog.BotAnswer answer;
-            //EntityRecommendation _person = new EntityRecommendation();
-            //if (result.TryFindEntity("Person", out _person))
-            //{
-            //    string tag = string.Concat(query, "-", _person.Entity.Replace(' ', '-').ToLower());
-            //    answer = await ForwarderDialog.GetWcmBotAnswerByTag(tag);
-            //    if (answer.items.Count.Equals(0))
-            //    {
-            //        answer = await ForwarderDialog.GetWcmBotAnswerByTag(defaultTag);
-            //    }
-            //    await context.PostAsync(answer.items.First().fields.Answer);
-            //    if (!string.IsNullOrEmpty(answer.items.First().fields.Link))
-            //    {
-            //        await context.PostAsync(string.Concat("Guarda qui: ", answer.items.First().fields.Link));
-            //    }
-            //    context.Wait(MessageReceived);
-            //    return;
-            //}
-            //answer = await ForwarderDialog.GetWcmBotAnswerByTag(defaultTag);
-            //await context.PostAsync(answer.items.First().fields.Answer);
-            //context.Wait(MessageReceived);
         }
 
         [LuisIntent("askinfo.aboutme")]
@@ -88,33 +43,6 @@ namespace SciarBot.Dialogs
         {
             await context.PostAsync(await ForwarderDialog.GetMessage(result, "Wiki"));
             context.Wait(MessageReceived);
-
-            //var intent = result.Intents[0];
-            //var query = intent.Intent.Replace('.', '-');
-            //string defaultTag = string.Concat(ForwarderDialog.LastIntent != null ? ForwarderDialog.LastIntent + "-" : "", query, "-default");
-            //ForwarderDialog.BotAnswer answer;
-            //EntityRecommendation _wiki = new EntityRecommendation();
-            //if (result.TryFindEntity("Wiki", out _wiki))
-            //{
-            //    string tag = string.Concat(query, "-", _wiki.Entity.Replace(' ', '-').ToLower());
-
-            //    answer = await ForwarderDialog.GetWcmBotAnswerByTag(tag);
-            //    if (answer.items.Count.Equals(0))
-            //    {
-            //        answer = await ForwarderDialog.GetWcmBotAnswerByTag(defaultTag);
-            //    }
-            //    var item = answer.items.First();
-            //    await context.PostAsync(String.Concat(item.fields.Answer, "\r\n", item.fields.Link));
-            //    context.Wait(MessageReceived);
-            //    if (item.fields.IsQuestion)
-            //    {
-            //        ForwarderDialog.LastIntent = intent.Intent;
-            //    }
-            //    return;
-            //}
-            //answer = await ForwarderDialog.GetWcmBotAnswerByTag(defaultTag);
-            //await context.PostAsync(answer.items.First().fields.Answer);
-            //context.Wait(MessageReceived);
         }
 
         [LuisIntent("")]

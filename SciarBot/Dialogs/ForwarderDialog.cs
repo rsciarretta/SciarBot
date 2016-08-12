@@ -160,12 +160,12 @@ namespace SciarBot.Dialogs
         {
             var intent = result.Intents[0];
             var query = (LastIntent != null ? LastIntent : intent.Intent).Replace('.', '-');
-            string defaultTag = string.Concat(query, "-default");
+            string defaultTag = string.Concat(query, ",default");
             BotAnswer answer;
             EntityRecommendation _entity = new EntityRecommendation();
             if (result.TryFindEntity(entityName, out _entity))
             {
-                string tag = string.Concat(query, "-", _entity.Entity.Replace(' ', '-').ToLower());
+                string tag = string.Concat(query, ",", _entity.Entity.Replace(' ', '-').ToLower());
 
                 answer = await GetWcmBotAnswerByTag(tag);
                 if (answer.items.Count.Equals(0))
